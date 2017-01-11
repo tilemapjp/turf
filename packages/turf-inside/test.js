@@ -67,6 +67,10 @@ test('vertex issues', function (t) {
   var vt1 = point([ 10, 10 ]);
   var vt2 = point([ 30, 20 ]);
   var vt3 = point([ 50, 10 ]);
+  //var vt1 = point([ 20, 15 ]);
+  //var vt2 = point([ 30, 15 ]);
+  //var vt3 = point([ 40, 15 ]);
+
   var poly = polygon([[
     [ 10, 10 ],
     [ 30, 20 ],

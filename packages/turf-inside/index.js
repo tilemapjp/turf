@@ -1,4 +1,6 @@
 var invariant = require('@turf/invariant');
+var centroid = require('@turf/centroid');
+var lineString = require('@turf/helpers').lineString;
 
 // http://en.wikipedia.org/wiki/Even%E2%80%93odd_rule
 // modified from: https://github.com/substack/point-in-polygon/blob/master/index.js
@@ -53,10 +55,24 @@ module.exports = function input(point, polygon) {
 // pt is [x,y] and ring is [[x,y], [x,y],..]
 function inRing(pt, ring) {
     var isInside = false;
+    if (ring[0][0] == ring[ring.length-1][0] && ring[0][1] == ring[ring.length-1][1]) ring = ring.slice(0, ring.length-1);
+    var cent = invariant.getCoord(centroid(lineString(ring)));
+    console.log(cent);
+    console.log(pt);
+    var cent_dx = cent[0] - pt[0];
+    var cent_dy = cent[1] - pt[1];
+    var theta = Math.atan2(cent_dx, cent_dy);
+    console.log([cent_dx, cent_dy]);
+    console.log(theta);
+    var xc = cent_dy * Math.cos(theta) + cent_dx * Math.sin(theta) + pt[0];
+    var yc = cent_dx * Math.cos(theta) - cent_dy * Math.sin(theta) + pt[1];
+    console.log(pt);
+    console.log([xc, yc]);
     for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        var xi = ring[i][0], yi = ring[i][1];
-        var xj = ring[j][0], yj = ring[j][1];
-        if ((xi == pt[0] && yi == pt[1]) || (xj == pt[0] && yj == pt[1])) return true;
+        var xi = (ring[i][1] - pt[1]) * Math.cos(theta) + (ring[i][0] - pt[0]) * Math.sin(theta) + pt[0];
+        var yi = (ring[i][0] - pt[0]) * Math.cos(theta) - (ring[i][1] - pt[1]) * Math.sin(theta) + pt[1];
+        var xj = (ring[j][1] - pt[1]) * Math.cos(theta) + (ring[j][0] - pt[0]) * Math.sin(theta) + pt[0];
+        var yj = (ring[j][0] - pt[0]) * Math.cos(theta) - (ring[j][1] - pt[1]) * Math.sin(theta) + pt[1];
         var intersect = ((yi > pt[1]) !== (yj > pt[1])) &&
         (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi);
         if (intersect) isInside = !isInside;
