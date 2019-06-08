@@ -34,6 +34,7 @@ export {default as nearestPointOnLine} from '@turf/nearest-point-on-line';
 export {default as nearestPointToLine} from '@turf/nearest-point-to-line';
 export {default as planepoint} from '@turf/planepoint';
 export {default as tin} from '@turf/tin';
+export {default as constrainedTin} from '@turf/constrained-tin';
 export {default as bearing} from '@turf/bearing';
 export {default as destination} from '@turf/destination';
 export {default as kinks} from '@turf/kinks';

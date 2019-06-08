@@ -103,6 +103,7 @@
     "@turf/combine": "6.x",
     "@turf/concave": "6.x",
     "@turf/convex": "6.x",
+    "@turf/constrained-tin": "6.x",
     "@turf/destination": "6.x",
     "@turf/difference": "5.1.x",
     "@turf/dissolve": "5.1.x",
