@@ -6,6 +6,7 @@
 // Copyright 2018 Savithru Jayasinghe
 // Licensed under the MIT License
 var helper = require('@turf/helpers');
+var fs = require('fs');
 
 /**
  * Takes a set of {@link Point|points} and creates a
@@ -42,19 +43,41 @@ var helper = require('@turf/helpers');
  */
 module.exports = function(points, edges, z) {
     var isPointZ = false;
+    // Caluculating scale factor
+    // Original cdt-js not working well with coordinates between (0,0)-(1,1)
+    // So points must be normalized
+    var xyzs = points.features.reduce(function(prev, point) {
+        var xy = point.geometry.coordinates;
+        prev[0].push(xy[0]);
+        prev[1].push(xy[1]);
+        if (z) {
+            prev[2].push(point.properties[z]);
+        } else if (xy.length === 3) {
+            isPointZ = true;
+            prev[2].push(point.geometry.coordinates[2]);
+        }
+        return prev;
+    }, [[], [], []]);
+    var xMax = Math.max.apply(null, xyzs[0]);
+    var xMin = Math.min.apply(null, xyzs[0]);
+    var yMax = Math.max.apply(null, xyzs[1]);
+    var yMin = Math.min.apply(null, xyzs[1]);
+    var xDiff = xMax - xMin;
+    var xCenter = (xMax + xMin) / 2.0;
+    var yDiff = yMax - yMin;
+    var yCenter = (yMax + yMin) / 2.0;
+    var maxDiff = Math.max(xDiff, yDiff) * 1.1;
+    // Normalize points
+    var normPoints = points.features.map(function(point) {
+        var xy = point.geometry.coordinates;
+        normXy = [
+            (xy[0] - xCenter) / maxDiff + 0.5,
+            (xy[1] - yCenter) / maxDiff + 0.5
+        ];
+        return new Point(normXy[0], normXy[1]);
+    });
     var ret = {
-        vert: points.features.map(function(point) {
-            var xy = point.geometry.coordinates;
-            return new Point(xy[0], xy[1]);
-        }),
-        z: points.features.map(function(point) {
-            if (z) {
-                return point.properties[z];
-            } else if (point.geometry.coordinates.length === 3) {
-                isPointZ = true;
-                return point.geometry.coordinates[2];
-            }
-        })
+        vert: normPoints
     };
     loadEdges(ret, edges)
     delaunay(ret);
@@ -63,12 +86,12 @@ module.exports = function(points, edges, z) {
     return helper.featureCollection(ret.tri.map(function(indices) {
         var properties = {};
         var coords = indices.map(function(index, i) {
-            var coord = [ret.vert[index].x, ret.vert[index].y];
-            if (ret.z[index] !== undefined) {
+            var coord = [xyzs[0][index], xyzs[1][index]];
+            if (xyzs[2][index] !== undefined) {
                 if (isPointZ) {
-                    coord[2] = ret.z[index];
+                    coord[2] = xyzs[2][index];
                 } else {
-                    properties[keys[i]] = ret.z[index];
+                    properties[keys[i]] = xyzs[2][index];
                 }
             }
             return coord; 
@@ -119,9 +142,9 @@ function getPointOrientation(edge, p)
 
 //Some variables for rendering
 
-var min_coord = new Point(-16000000, -16000000);
-var screenL = 32000000;
-var boundingL = 1000000000;
+var min_coord = new Point(0.0, 0.0);//new Point(-16000000, -16000000);
+var screenL = 1.0;//32000000;
+var boundingL = 1000;//1000000000;
 
 function binSorter(a, b)
 {
